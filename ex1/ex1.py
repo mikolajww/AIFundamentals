@@ -31,7 +31,7 @@ def random_samples_from_multivariate(groups, samples_per_group):
     x = []
     y = []
     for i in range(0, groups):
-        a, b = np.random.multivariate_normal(means[i], covs[i], samples_per_group).T
+        a, b = np.random.multivariate_normal(means[i], covs[i], samples_per_group, check_valid='ignore').T
         x.append(a)
         y.append(b)
     return x, y
