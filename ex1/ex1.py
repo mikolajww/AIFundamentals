@@ -31,11 +31,11 @@ def random_samples_from_multivariate(groups, samples_per_group):
     x = []
     y = []
     for i in range(0, groups):
-        for j in range(0, samples_per_group):
-            a, b = np.random.default_rng().multivariate_normal(means[i], covs[i]).T
-            x.append(a)
-            y.append(b)
+        a, b = np.random.multivariate_normal(means[i], covs[i], samples_per_group).T
+        x.append(a)
+        y.append(b)
     return x, y
+
 
 def generate_and_plot_groups(groups, samples_per_group):
     ax.cla()
