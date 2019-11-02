@@ -10,8 +10,8 @@ class DataVisualiser:
         self.cov_range = (-5, 5)
         self.colors = ["blue", "red"]
         self.colors_to_label = {"blue": 0, "red": 1}
-        self.groups = {"blue": 2, "red": 3}
-        self.samples_per_group = {"blue": 500, "red": 1000}
+        self.groups = {"blue": 1, "red": 1}
+        self.samples_per_group = {"blue": 100, "red": 100}
         self.generators = {
             "blue": DataGenerator(self.mean_range, self.cov_range, self.colors_to_label["blue"]),
             "red": DataGenerator(self.mean_range, self.cov_range, self.colors_to_label["red"])
@@ -19,6 +19,8 @@ class DataVisualiser:
         self.data = {"blue": {}, "red": {}}
         self.neuron = n.Neuron(2, n.neuron_heaviside_activate, n.d_neuron_heaviside_activate)
         self.fig, self.ax = plt.subplots()
+        self.xlim = []
+        self.ylim = []
         plt.subplots_adjust(bottom=0.3)
         plt.autoscale(enable=True, axis='both', tight=True)
         red_groups = plt.axes([0.15, 0.17, 0.32, 0.05])
@@ -62,6 +64,8 @@ class DataVisualiser:
             self.data[color]["samples"] = samples
             self.data[color]["labels"] = labels
             self.ax.scatter(samples[0], samples[1], c=color)
+        self.ylim = self.ax.get_ylim()
+        self.xlim = self.ax.get_xlim()
     
     def merge_to_tuples(self, xs, ys):
         tuples = []
@@ -71,9 +75,14 @@ class DataVisualiser:
 
     def train(self):
         for color in self.colors:
-            data = self.data[color]["samples"]
-            pairs = self.merge_to_tuples(data[0], data[1])
-            self.neuron.train(np.array(pairs), np.array([self.data[color]["labels"]]), 100)
+            training_set = self.data[color]["samples"]
+            reference_set = self.data[color]["labels"]
+            self.neuron.train(np.array(training_set), np.array(reference_set), 1000)
+        x = np.linspace(-50, 50, 100)
+        y = (-self.neuron.weights[1]/self.neuron.weights[2]) * x + (-self.neuron.weights[0]/self.neuron.weights[2])
+        self.ax.plot(x, y, '-g')
+        self.ax.set_xlim(self.xlim)
+        self.ax.set_ylim(self.ylim)
 
 
 visualizer = DataVisualiser()
