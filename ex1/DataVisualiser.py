@@ -29,6 +29,7 @@ class DataVisualiser:
         blue_samples_per_group = plt.axes([0.63, 0.11, 0.32, 0.05])
         generate = plt.axes([0.15, 0.05, 0.32, 0.05])
         train = plt.axes([0.63, 0.05, 0.32, 0.05])
+        plt.sca(self.ax)
 
         red_groups_tb = TextBox(red_groups, 'Red groups', initial=str(self.groups["red"]))
         red_groups_tb.label.set_wrap(True)
@@ -74,15 +75,14 @@ class DataVisualiser:
         return tuples
 
     def train(self):
+        training_set = [[], []]
+        reference_set = []
         for color in self.colors:
-            training_set = self.data[color]["samples"]
-            reference_set = self.data[color]["labels"]
-            self.neuron.train(np.array(training_set), np.array(reference_set), 1000)
-        x = np.linspace(-50, 50, 100)
-        y = (-self.neuron.weights[1]/self.neuron.weights[2]) * x + (-self.neuron.weights[0]/self.neuron.weights[2])
-        self.ax.plot(x, y, '-g')
-        self.ax.set_xlim(self.xlim)
-        self.ax.set_ylim(self.ylim)
+            training_set[0].extend(self.data[color]["samples"][0])
+            training_set[1].extend(self.data[color]["samples"][1])
+            reference_set.extend(self.data[color]["labels"])
+        training_set = np.array(training_set).T
+        self.neuron.train(np.array(training_set), np.array(reference_set), 1000, self.fig)
 
 
 visualizer = DataVisualiser()
