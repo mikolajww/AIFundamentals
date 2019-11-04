@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 from matplotlib.widgets import TextBox, Button
+from matplotlib.colors import ListedColormap
 import numpy as np
 from DataGenerator import DataGenerator
 import Neuron as n
@@ -9,7 +10,7 @@ class DataVisualiser:
         self.mean_range = (-30, 30)
         self.cov_range = (-5, 5)
         self.colors = ["blue", "red"]
-        self.colors_to_label = {"blue": 0, "red": 1}
+        self.colors_to_label = {"red": 0, "blue": 1}
         self.groups = {"blue": 1, "red": 1}
         self.samples_per_group = {"blue": 100, "red": 100}
         self.generators = {
@@ -17,10 +18,11 @@ class DataVisualiser:
             "red": DataGenerator(self.mean_range, self.cov_range, self.colors_to_label["red"])
         }
         self.data = {"blue": {}, "red": {}}
-        self.neuron = n.Neuron(2, n.neuron_heaviside_activate, n.d_neuron_heaviside_activate)
+        self.neuron = n.Neuron(2, n.Neuron.activation_function("lrelu"), n.Neuron.d_activation_funcion("lrelu"))
         self.fig, self.ax = plt.subplots()
         self.xlim = []
         self.ylim = []
+        self.colorbar = None
         plt.subplots_adjust(bottom=0.3)
         plt.autoscale(enable=True, axis='both', tight=True)
         red_groups = plt.axes([0.15, 0.17, 0.32, 0.05])
@@ -74,13 +76,31 @@ class DataVisualiser:
         return tuples
 
     def train(self):
+        self.ax.cla()
         for color in self.colors:
-            training_set = self.data[color]["samples"]
-            reference_set = self.data[color]["labels"]
-            self.neuron.train(np.array(training_set), np.array(reference_set), 1000)
-        x = np.linspace(-50, 50, 100)
-        y = (-self.neuron.weights[1]/self.neuron.weights[2]) * x + (-self.neuron.weights[0]/self.neuron.weights[2])
-        self.ax.plot(x, y, '-g')
+            self.ax.scatter(self.data[color]["samples"][0], self.data[color]["samples"][1], c=color)
+        self.ylim = self.ax.get_ylim()
+        self.xlim = self.ax.get_xlim()
+        training_set = [[], []]
+        reference_set = []
+        for color in self.colors:
+            training_set[0].extend(self.data[color]["samples"][0])
+            training_set[1].extend(self.data[color]["samples"][1])
+            reference_set.extend(self.data[color]["labels"])
+        training_set = np.array(training_set).T
+        self.neuron.train(np.array(training_set), np.array(reference_set), 10)
+        dim = np.arange(self.mean_range[0] + 3*self.cov_range[0], self.mean_range[1] + 3*self.cov_range[1], 0.1)
+        xx, yy = np.meshgrid(dim, dim)
+        decision_region = self.neuron.predict(np.array([xx.ravel(), yy.ravel()]).T)
+        decision_region = decision_region.reshape(xx.shape)
+        contour = self.ax.contourf(xx, yy, decision_region, alpha=0.5, cmap='RdBu')
+        accuracy = self.neuron.test_accuracy(np.array(training_set), np.array(reference_set))
+        print("Accuracy: ", accuracy)
+        if self.colorbar is None:
+            self.colorbar = plt.colorbar(contour, ax=self.ax)
+        # x = np.linspace(-50, 50, 100)
+        # y = (-self.neuron.weights[1]/self.neuron.weights[2]) * x + (-self.neuron.weights[0]/self.neuron.weights[2])
+        # self.ax.plot(x, y, '-g')
         self.ax.set_xlim(self.xlim)
         self.ax.set_ylim(self.ylim)
 
