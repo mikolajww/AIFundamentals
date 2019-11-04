@@ -95,7 +95,7 @@ class DataVisualiser:
         decision_region = decision_region.reshape(xx.shape)
         contour = self.ax.contourf(xx, yy, decision_region, alpha=0.5, cmap='RdBu')
         accuracy = self.neuron.test_accuracy(np.array(training_set), np.array(reference_set))
-        print("Accuracy: ", accuracy)
+        self.ax.set_title(f"Accuracy: {accuracy}%")
         if self.colorbar is None:
             self.colorbar = plt.colorbar(contour, ax=self.ax)
         # x = np.linspace(-50, 50, 100)
