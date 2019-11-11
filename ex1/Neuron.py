@@ -2,10 +2,11 @@ import numpy as np
 
 class Neuron:
     def __init__(self, inputs_num, activation_func, d_activation_func):
-        self.eta = 0.05
+        self.eta = 0.25
         self.activation_func = activation_func
         self.d_activation_func = d_activation_func
-        self.weights = np.zeros(inputs_num + 1)
+        self.inputs_num = inputs_num
+        self.weights = np.random.rand(inputs_num + 1)
     
     @staticmethod
     def available_functions():
@@ -21,11 +22,12 @@ class Neuron:
             return fn  
         if name == "sigmoid":
             def fn(state):
-                return 1 / (1 + np.exp(-state))
+                beta = -1
+                return 1 / (1 + np.exp(beta * state))
             return fn
         if name == "sin":
             def fn(state):
-                return np.clip(np.sin(state), -1, 1)
+                return np.sin(state)
             return fn
         if name == "tanh":
             def fn(state):
@@ -43,13 +45,11 @@ class Neuron:
             def fn(state):
                 return np.clip(np.where(state > 0, state, 0.01 * state), -1, 1)
             return fn
-            
         else:
-            raise NotImplementedError
-            
+            raise NotImplementedError    
 
     @staticmethod
-    def d_activation_funcion(name):
+    def d_activation_function(name):
         if name not in Neuron.available_functions():
             raise NotImplementedError
         if name == "step":
@@ -58,7 +58,8 @@ class Neuron:
             return fn  
         if name == "sigmoid":
             def fn(state):
-                return (1 / (1 + np.exp(-state))) * (1 - (1 / (1 + np.exp(-state))))
+                beta = -1
+                return (1 / (1 + np.exp(beta * state))) * (1 - (1 / (1 + np.exp(beta * state))))
             return fn
         if name == "sin":
             def fn(state):
@@ -67,10 +68,6 @@ class Neuron:
         if name == "tanh":
             def fn(state):
                 return 1.0 - np.tanh(state)**2
-            return fn
-        if name == "sign":
-            def fn(state):
-                return 1
             return fn
         if name == "sign":
             def fn(state):
@@ -87,25 +84,32 @@ class Neuron:
         else:
             raise NotImplementedError
 
+    def reset_weights(self):
+        self.weights = np.random.rand(self.inputs_num + 1)
+
     def train(self, training_inputs, labels, iterations):
+        training_inputs, labels = unison_shuffled_copies(training_inputs, labels)
+        eta = self.eta
+        print(f"Initial weights: {self.weights}")
         for i in range(iterations):
+            eta -= 0.001 * i
+            errors = 0
             for input_point, label in zip(training_inputs, labels):
                 error = label - self.predict(input_point)
-                self.weights[1:] += self.eta * error * input_point
-                self.weights[0] += self.eta * error
+                #if(error != 0): print(f"Error (iteration {i}) : {error}")
+                self.weights[1:] += eta * error * self.d_activation_func(self.state(input_point)) * input_point
+                self.weights[0] += eta * self.d_activation_func(self.state(input_point)) * error
+                errors += abs(error)
+            print(f"Weights after {i} iteration: {self.weights}")
+        print(f"Errors: {errors}")
 
-    def test_accuracy(self, inputs, labels):
-        predictions = self.predict(inputs)
-        errors = 0
-        inputs_num = len(inputs)
-        for prediction, label in zip(predictions, labels):
-            if prediction != label:
-                errors += abs(prediction - label)
-        return 100 - (errors * 100/inputs_num)
-                
     def predict(self, inputs):
         return self.activation_func(self.state(inputs))
 
     def state(self, inputs):
         return np.dot(inputs, self.weights[1:]) + self.weights[0]
 
+def unison_shuffled_copies(a, b):
+    assert len(a) == len(b)
+    p = np.random.permutation(len(a))
+    return a[p], b[p]

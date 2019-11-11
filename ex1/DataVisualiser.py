@@ -18,7 +18,7 @@ class DataVisualiser:
             "red": DataGenerator(self.mean_range, self.cov_range, self.colors_to_label["red"])
         }
         self.data = {"blue": {}, "red": {}}
-        self.neuron = n.Neuron(2, n.Neuron.activation_function("lrelu"), n.Neuron.d_activation_funcion("lrelu"))
+        self.neuron = n.Neuron(2, n.Neuron.activation_function("step"), n.Neuron.d_activation_function("step"))
         self.fig, self.ax = plt.subplots()
         self.xlim = []
         self.ylim = []
@@ -30,7 +30,8 @@ class DataVisualiser:
         blue_groups = plt.axes([0.63, 0.17, 0.32, 0.05])
         blue_samples_per_group = plt.axes([0.63, 0.11, 0.32, 0.05])
         generate = plt.axes([0.15, 0.05, 0.32, 0.05])
-        train = plt.axes([0.63, 0.05, 0.32, 0.05])
+        train = plt.axes([0.63, 0.05, 0.16, 0.05])
+        activ = plt.axes([0.80, 0.05, 0.15, 0.05])
 
         red_groups_tb = TextBox(red_groups, 'Red groups', initial=str(self.groups["red"]))
         red_groups_tb.label.set_wrap(True)
@@ -47,6 +48,8 @@ class DataVisualiser:
         generate_button = Button(generate, 'Generate random data', hovercolor='lightblue')
         train_button = Button(train, 'Train', hovercolor='lightgreen')
         train_button.on_clicked(lambda _: self.train())
+        self.activ_button = TextBox(activ, '',initial='step')
+
         generate_button.on_clicked(
             lambda _: self.update_and_plot_groups({"red": int(red_groups_tb.text), "blue": int(blue_groups_tb.text)},
                                                   {"red": int(red_samples_per_group_tb.text),
@@ -66,6 +69,7 @@ class DataVisualiser:
             self.data[color]["samples"] = samples
             self.data[color]["labels"] = labels
             self.ax.scatter(samples[0], samples[1], c=color)
+        self.neuron.reset_weights()
         self.ylim = self.ax.get_ylim()
         self.xlim = self.ax.get_xlim()
     
@@ -81,6 +85,8 @@ class DataVisualiser:
             self.ax.scatter(self.data[color]["samples"][0], self.data[color]["samples"][1], c=color)
         self.ylim = self.ax.get_ylim()
         self.xlim = self.ax.get_xlim()
+        self.neuron.activation_func = n.Neuron.activation_function(self.activ_button.text)
+        self.neuron.d_activation_func = n.Neuron.d_activation_function(self.activ_button.text)
         training_set = [[], []]
         reference_set = []
         for color in self.colors:
@@ -89,13 +95,12 @@ class DataVisualiser:
             reference_set.extend(self.data[color]["labels"])
         training_set = np.array(training_set).T
         self.neuron.train(np.array(training_set), np.array(reference_set), 10)
-        dim = np.arange(self.mean_range[0] + 3*self.cov_range[0], self.mean_range[1] + 3*self.cov_range[1], 0.1)
+        dim = np.arange(self.mean_range[0] + 3*self.cov_range[0], self.mean_range[1] + 3*self.cov_range[1], 0.2)
         xx, yy = np.meshgrid(dim, dim)
         decision_region = self.neuron.predict(np.array([xx.ravel(), yy.ravel()]).T)
         decision_region = decision_region.reshape(xx.shape)
         contour = self.ax.contourf(xx, yy, decision_region, alpha=0.5, cmap='RdBu')
-        accuracy = self.neuron.test_accuracy(np.array(training_set), np.array(reference_set))
-        self.ax.set_title(f"Accuracy: {accuracy}%")
+        # self.ax.set_title(f"Accuracy: {accuracy}%")
         if self.colorbar is None:
             self.colorbar = plt.colorbar(contour, ax=self.ax)
         # x = np.linspace(-50, 50, 100)
