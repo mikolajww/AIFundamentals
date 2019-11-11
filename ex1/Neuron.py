@@ -90,7 +90,7 @@ class Neuron:
     def train(self, training_inputs, labels, iterations):
         training_inputs, labels = unison_shuffled_copies(training_inputs, labels)
         eta = self.eta
-        print(f"Initial weights: {self.weights}")
+        # print(f"Initial weights: {self.weights}")
         for i in range(iterations):
             eta -= 0.001 * i
             errors = 0
@@ -100,8 +100,8 @@ class Neuron:
                 self.weights[1:] += eta * error * self.d_activation_func(self.state(input_point)) * input_point
                 self.weights[0] += eta * self.d_activation_func(self.state(input_point)) * error
                 errors += abs(error)
-            print(f"Weights after {i} iteration: {self.weights}")
-        print(f"Errors: {errors}")
+            # print(f"Weights after {i} iteration: {self.weights}")
+        # print(f"Errors: {errors}")
 
     def predict(self, inputs):
         return self.activation_func(self.state(inputs))
