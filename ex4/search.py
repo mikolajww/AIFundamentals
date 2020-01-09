@@ -1,7 +1,7 @@
 import math
 import copy
 import sys
-
+import time
 
 distances = \
     {\
@@ -83,8 +83,12 @@ def find_next_best_state(list_of_states: [State], mode='heuristic'):
                 current_best_index = index
         return current_best_index
 
-mode = sys.argv[1]
+if(len(sys.argv) == 2):
+    mode = sys.argv[1]
+else:
+    mode = 'heuristic'
 
+start = time.perf_counter()
 Q = []
 initial_state = State(demand, truck_pos, truck_capacity, None, 0)
 Q.append(initial_state)
@@ -92,7 +96,8 @@ while(True):
     idx = find_next_best_state(Q, mode=mode)
     s = Q.pop(idx)
     if(is_satisfied(s.items_delivered)):
-        print('Found soultion')
+        stop = time.perf_counter()
+        print(f'Found solution! Elapsed time: {stop - start}')
         s.print_recursive()
         break
     tmp = expand(s)
